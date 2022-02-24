@@ -29,7 +29,7 @@ In this lab, you will learn how labels work and why using them is important in K
 2. Check whether you have successfully deployed 2 deployments (frontend and api) and 2 services (frontend-svc and api-svc):
 
     ```bash
-    kubectl get all --all
+    kubectl get all
     ```
 
 ## Task 2: Find a mistake
