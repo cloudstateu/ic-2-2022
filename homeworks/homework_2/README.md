@@ -229,14 +229,6 @@ Sposób tworzenia i wykorzystania Liveness Probe został przedstawiony w ćwicze
 
 W celu przetestowania działania Readiness Probe możesz wyłączyć bazę danych w Azure. W ten sposób proste zapytania do bazy danych, które jest wykonywane przez endpoint `/ready` nie powiedzie się i Readiness Probe powinien zwrócić porażkę i w ostatczności odłączyć repliki od Service i w ten sposób nie kierować ruchu do procesów, które nie są w stanie go obsłużyć.
 
-## Zadanie 2
-
-**Case Study:** Pomóż swoim kolegom z innego zespołu, którzy mają problem z uruchomieniem ich aplikacji. Proszą Cię o pomoc w znalezieniu i naprawieniu błędu w ich wdrożeniu. W tym celu wysyłają Ci plik YAML - [app.yaml](./files/app.yaml), który stworzyli oraz wizualizację poprawnego działania ich aplikacji.
-
-![img](./img/wizualizacja_app.png)
-
-**Zadanie:** Sprawdź działanie aplikacji wdrażanej przez inny zespół i znajdź błąd. Popraw plik YAML tak, aby apliakacja działała w sposób przedstawiony na wizualizacji.
-
 <br><br>
 
 <center><p>&copy; 2022 Chmurowisko Sp. z o.o.<p></center>
