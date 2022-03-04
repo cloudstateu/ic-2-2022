@@ -27,7 +27,7 @@ Do aplikacji z pracy domowej #1 został dodany Worker. Worker jest programem, kt
 
 1. **Pytania i wątpliwości**
 
-    W razie jakichkolwiek pytań lub wątpliwości wyślij wiadomość na [maciej.borowy@chmurowisko.pl](mailto:maciej.borowy@chumrowisko.pl) i [daniel.pisarek@chmurowisko.pl](mailto:daniel.pisarek@chumrowisko.pl).
+    W razie jakichkolwiek pytań lub wątpliwości wyślij swój problem na [maciej.borowy@chmurowisko.pl](mailto:maciej.borowy@chumrowisko.pl) i [daniel.pisarek@chmurowisko.pl](mailto:daniel.pisarek@chumrowisko.pl).
 
 ---
 
@@ -48,10 +48,21 @@ Wraz z biegiem czasu na klastrze może pojawić się coraz więcej obiektów. Do
 
 #### Podpowiedzi
 
-Sposób tworzenia Namespace i umieszczania w nich komponentów K8s został przedstawiony w ćwiczeniu poświęconym [Namespace (link)](https://github.com/cloudstateu/ic-1-2022/tree/main/Kubernetes/06_namespace).
+Sposób tworzenia Namespace i umieszczania w nich komponentów K8s został przedstawiony w ćwiczeniu poświęconym [Namespace (link)](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/06_namespace).
 
 Jeśli na klastrze posiadasz zasoby, które są już utworzone w Namespace `default` usuń je za pomocą `kubectl delete` i utwórz na nowo we właściwym Namespace.
 
+<details>
+  <summary><b>Odpowiedzi</b></summary>
+
+  ```bash
+  kubectl create namespace frontend
+  kubectl create namespace backend
+
+  kubectl apply -f 1-frontend_deployment.yaml
+  kubectl apply -f 1-api_deployment.yaml
+  ```
+</details>
 
 ### 2. Wykorzystanie Ingress do udostępnienia aplikacji poprzez jeden publiczny adres IP
 
@@ -72,7 +83,84 @@ W sytuacji gdy chcemy udostępnić poza klaster kilka komponentów wchodzących 
 Wykorzystaj Ingress Controller [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) w celu udostępnienia aplikacji React oraz API poprzez jeden publiczny adres IP. 
 Jeśli podzieliłeś rozwiązanie na dwa Namespace powinieneś stworzyć dwa pliki YAML z konfiguracją obiektu Ingress dla usług w odpowiednich Namespace. Podział konfiguracji obiektu Ingress jest znaną i rekomendowaną praktyką konfigurowania Ingress dla usług w wielu Namespace.
 
-Sposób instalacji i konfiguracji Ingress został przedstawiony w ćwiczeniu poświęconym **Ingress** - [Link do ćwiczenia](https://github.com/cloudstateu/ic-1-2022/tree/main/Kubernetes/13_ingress). Zauważ, że obie aplikacje znajdują się w jednym Namespace, dlatego w ćwiczeniu stworzono tylko jedną konfigurację obiektu Ingress. 
+Sposób instalacji i konfiguracji Ingress został przedstawiony w ćwiczeniu poświęconym **Ingress** - [Link do ćwiczenia](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/13_ingress). Zauważ, że obie aplikacje znajdują się w jednym Namespace, dlatego w ćwiczeniu stworzono tylko jedną konfigurację obiektu Ingress. 
+
+<details>
+  <summary><b>Odpowiedzi</b></summary>
+
+  Zainstaluj Ingress Controller `ingress-nginx` na klastrze:
+
+  ```bash
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.1/deploy/static/provider/cloud/deploy.yaml
+  ```
+
+  Skonfiguruj obiekt Ingress dla aplikacji React w Namespace frontend:
+
+  ```yaml
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: ingress
+    namespace: frontend
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  spec:
+    rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+  ```
+
+  Skonfiguruj obiekt Ingress dla aplikacji w Namespace backend:
+
+  ```yaml
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: ingress
+    namespace: backend
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+  spec:
+    rules:
+    - http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8888
+  ```
+
+  Wdróż obie konfiguracje na klaster:
+
+  ```bash
+  kubectl apply -f <frontend-ingress-config>.yaml -f <backend-ingress-config>.yaml
+  ```
+
+  Sprawdź adres IP dla Service `ingress-nginx-controller`, żeby wywołać aplikację z sieci Internet:
+
+  ```bash
+  kubectl get service/ingress-nginx-controller -n ingress-nginx
+  ```
+
+  Sprawdź czy otrzymujesz odpowiedź 200 OK na endpoint: `/` oraz `/api/info`. 
+  
+  **Uwaga**: W tym momencie aplikacja w przeglądarce będzie się uruchamiała, ale nie będzie prezentowała danych o kursach, ponieważ nie skonfigurowaliśmy aplikacji Frontend by pobierała dane z API. Obie aplikacje zintegrujemy później - gdy podłączymy API do bazy danych.
+
+</details>
 
 ### 3. Stworzenie bazy danych
 
@@ -114,7 +202,14 @@ Baza danych jest koniecznym elementem tworzonego systemu. Worker zapisuje zebran
 
 #### Podpowiedzi
 
-Sposób tworzenia usługi Azure Database for Postgres oraz podłączenia do serwera Postgres przedstawiony w ćwiczeniu poświęconym **integracji z bazą danych** :point_right: [link do ćwiczenia](https://github.com/cloudstateu/ic-1-2022/tree/main/Kubernetes/12_connect_to_azure_database).
+Sposób tworzenia usługi Azure Database for Postgres oraz podłączenia do serwera Postgres przedstawiony w ćwiczeniu poświęconym **integracji z bazą danych** :point_right: [link do ćwiczenia](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/12_connect_to_azure_database).
+
+<details>
+  <summary><b>Odpowiedzi</b></summary>
+
+  W tym zadaniu wszystkie odpowiedzi zawarte są w treści lub w [treści ćwiczenia wykonywanego podczas spotkania](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/12_connect_to_azure_database) :smile:
+
+</details>
 
 ### 4. Udostępnij Worker na klastrze za pomocą CronJob
 
@@ -133,6 +228,17 @@ Worker w tworzonej aplikacji zajmuje się pobraniem danych o kursach walut z API
 Po wdrożeniu Worker na klaster, sprawdź czy pobiera dane z API NBP i wstawia je do bazy. W razie potrzeby zmień harmonogram uruchomienia CronJob (na np. `* * * * *`, czyli uruchomienie Job co minutę).
 
 CronJob powinien korzystać z ConfigMapy, które będzie zawierała informacje pozwalające połączyć się do bazy danych Postgres.
+
+<details>
+  <summary><b>Odpowiedzi</b></summary>
+
+  Po wdrożeniu CronJob odczekaj minutę i sprawdź czy CronJob wstawia dane do tabeli `exchangerates`. Połącz się z serwerem Postgres za pomocą `psql`, podłącz się do bazy danych `bank` i sprawdź czy posiadasz dane z wartością w kolumnie `created_on` sprzed chwili (dodane około minuty temu; dane w bazie danych mogą posiadać inną strefę czasową niż strefa czasowa w której się znajdujesz):
+
+  ```sql
+  SELECT * FROM exchangerates ORDER BY created_on DESC
+  ```
+
+</details>
 
 ### 5. Podłączenie Key Vault w celu przechowywania w nim sekretów do bazy danych
 
@@ -165,13 +271,13 @@ Usługa Key Vault pozowli na bezpieczne przechowywanie sekretów do bazy danych,
     - `keyvaultName` - nazwa utworzonego Key Vault
     - `tenantId`
 
-    Informację jak zdobyć te wartości znajdziesz w ćwiczeniu [Key Valut (ćwiczenie)](https://github.com/cloudstateu/ic-1-2022/tree/main/Kubernetes/16_azure_key_vault).
+    Informację jak zdobyć te wartości znajdziesz w ćwiczeniu [Key Valut (ćwiczenie)](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/16_azure_key_vault).
 
 1. Stwórz Pod do debugging i sprawdź czy sekrety są pobierane z Key Vault
 
 #### Podpowiedzi
 
-Sposób tworzenia i wykorzystania Key Vault przedstawiono w ćwiczeniu poświęconym [Key Valut (ćwiczenie)](https://github.com/cloudstateu/ic-1-2022/tree/main/Kubernetes/16_azure_key_vault).
+Sposób tworzenia i wykorzystania Key Vault przedstawiono w ćwiczeniu poświęconym [Key Valut (ćwiczenie)](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/16_azure_key_vault).
 
 W razie problemów z pobieraniem sekretów z Azure Key Vault do Pod możesz spróbować zdiagnozować problem za pomocą `kubectl describe pod`. Informacje zawarte w sekcji _"Events"_ z pewnością nakierują Cię gdzie szukać problemu.
 
@@ -182,6 +288,51 @@ W razie problemów z pobieraniem sekretów z Azure Key Vault do Pod możesz spr�
 ```bash
 helm install csi csi-secrets-store-provider-azure/csi-secrets-store-provider-azure -n csi --set secrets-store-csi-driver.syncSecret.enabled=true
 ```
+
+<details>
+  <summary><b>Odpowiedzi</b></summary>
+
+  ```bash
+  kubectl create ns csi
+
+  helm repo add csi-secrets-store-provider-azure https://raw.githubusercontent.com/Azure/secrets-store-csi-driver-provider-azure/master/charts
+
+  helm install csi csi-secrets-store-provider-azure/csi-secrets-store-provider-azure -n csi --set secrets-store-csi-driver.syncSecret.enabled=true
+
+  kubectl get pods -n csi
+  ```
+
+  ```bash
+  kubectl apply -f files/5-kayvault.yaml
+  ```
+
+  ```yaml
+  kind: Pod
+  apiVersion: v1
+  metadata:
+    name: test-key-vault-connectivity
+  spec:
+    containers:
+    - image: nginx
+      name: nginx
+      volumeMounts:
+      - name: secrets-store-inline
+        mountPath: /mnt/secrets-store
+    volumes:
+      - name: secrets-store-inline
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: azure-kvname
+  ```
+
+  ```bash
+  kubectl apply -f <test-key-vault-connectivity-pod.yaml>
+  kubectl exec test-key-vault-connectivity -- ls /mnt/secrets-store
+  ```
+
+</details>
 
 ### 6. Podłączenie API do bazy danych, tak aby odczytywać informacje o kursach walut
 
@@ -201,6 +352,34 @@ Zaktualizuj Deployment usługi API i sprawdź czy nadal poprawnie wyświetla dan
 1. Zaktualizuj CronJob za pomocą pliku [./files/6-worker-cronjob-secrets.yaml](./files/6-worker-cronjob-secrets.yaml)
 1. Sprawdź czy Worker nadal poprawnie wstawia dane do tabeli `exchangerates`
 
+<details>
+  <summary><b>Odpowiedzi</b></summary>
+
+  ```bash
+  kubectl apply -f files/6-deployment-api.yaml
+  ```
+
+  ```bash
+  curl <EXTERNAL-IP>/api/info
+  curl <EXTERNAL-IP>/api/prices/main
+  ```
+
+  ```bash
+  kubectl delete cm cm-azure-database-connection-details -n backend
+  ```
+
+  ```bash
+  kubectl apply -f files/6-worker-cronjob-secrets.yaml
+  ```
+
+  ```bash
+  kubectl run debug --image=postgres -it --rm --restart=Never -- sh
+  psql 'host=<DB_HOST>.postgres.database.azure.com port=5432 dbname=bank user=postgres sslmode=require password=Chmurowisko123'
+  SELECT * FROM exchangerates ORDER BY created_on DESC LIMIT 20;
+  ```
+
+</details>
+
 ### 7. Skomunikuj ze sobą Frontend i API
 
 #### Po co?
@@ -211,6 +390,41 @@ Do tego momentu aplikacja Frontend nie pobierała danych z aplikacji API, poniew
 
 1. Skonfiguruj Deployment aplikacji Frontend. Dodaj do kontenera z aplikacją Frontend wstrzyknięcie zmiennej środowiskowej `API_URL`. Po skonfigurowaniu Deployment Frontend wdróż go na klaster.
 1. Sprawdź czy aplikacja uruchomiona w przeglądarce prezentuje dane o kursach walut
+
+<details>
+  <summary><b>Odpowiedzi</b></summary>
+
+  Skonfigurowany Deployment:
+
+  ```yaml
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app: frontend
+    name: frontend
+    namespace: frontend
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        app: frontend
+    template:
+      metadata:
+        labels:
+          app: frontend
+      spec:
+        containers:
+        - image: macborowy/chmurobank-front:latest
+          name: app
+          ports:
+          - containerPort: 80
+          env:
+          - name: API_URL
+            value: "http://<INGRESS-EXTERNAL-IP>/api"
+  ```
+
+</details>
 
 ### 8. Wykorzystanie liveness i readiness probe
 
@@ -225,9 +439,67 @@ Zadaniem endpoint `/ready` jest sprawdzenie czy wszystkie zależności aplikacji
 
 Wykorzystaj mechanizm Probe w celu automatycznego sprawdzenia czy aplikacje działają poprawnie. Obraz aplikacji [macborowy/chmurobank-api:latest](https://hub.docker.com/r/macborowy/chmurobank-api) zawiera już kod aplikacji z zaimplementowanymi endpoint.
 
-Sposób tworzenia i wykorzystania Liveness Probe został przedstawiony w ćwiczeniu poświęconym **Liveness Probe** - [Link do ćwiczenia](https://github.com/cloudstateu/ic-1-2022/tree/main/Kubernetes/11_probes). Natomiast informację dotyczące tworzenia Readiness Probe  znadują się w dokumentacji Kubernetes - [Link do dokumentacji dotyczącej Readiness Probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-readiness-probes)
+Sposób tworzenia i wykorzystania Liveness Probe został przedstawiony w ćwiczeniu poświęconym **Liveness Probe** - [Link do ćwiczenia](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/11_probes). Natomiast informację dotyczące tworzenia Readiness Probe  znadują się w dokumentacji Kubernetes - [Link do dokumentacji dotyczącej Readiness Probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-readiness-probes)
 
 W celu przetestowania działania Readiness Probe możesz wyłączyć bazę danych w Azure. W ten sposób proste zapytania do bazy danych, które jest wykonywane przez endpoint `/ready` nie powiedzie się i Readiness Probe powinien zwrócić porażkę i w ostatczności odłączyć repliki od Service i w ten sposób nie kierować ruchu do procesów, które nie są w stanie go obsłużyć.
+
+<details>
+  <summary><b>Odpowiedzi</b></summary>
+
+  Zaktualizowany Deployment API wygląda następująco:
+
+  ```yaml
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app: api
+    name: api
+    namespace: backend
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        app: api
+    template:
+      metadata:
+        labels:
+          app: api
+      spec:
+        initContainers:
+        - name: sync-secrets
+          image: busybox
+          command: ['sh', '-c', 'until ls ./mnt/secrets-store; do echo Waiting for secrets to sync && sleep 1; done']
+          volumeMounts:
+          - name: secrets-store-inline
+            mountPath: "/mnt/secrets-store"
+            readOnly: true
+        containers:
+        - image: macborowy/chmurobank-api
+          name: app
+          ports:
+          - containerPort: 8888
+          envFrom:
+          - secretRef:
+              name: db-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8888
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8888
+        volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-kvname"
+  ```
+
+</details>
 
 <br><br>
 
