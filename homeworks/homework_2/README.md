@@ -48,7 +48,7 @@ Wraz z biegiem czasu na klastrze może pojawić się coraz więcej obiektów. Do
 
 #### Podpowiedzi
 
-Sposób tworzenia Namespace i umieszczania w nich komponentów K8s został przedstawiony w ćwiczeniu poświęconym [Namespace (link)](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/06_namespace).
+Sposób tworzenia Namespace i umieszczania w nich komponentów K8s został przedstawiony w ćwiczeniu poświęconym [Namespace (link)](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/09_namespace).
 
 Jeśli na klastrze posiadasz zasoby, które są już utworzone w Namespace `default` usuń je za pomocą `kubectl delete` i utwórz na nowo we właściwym Namespace.
 
@@ -202,12 +202,12 @@ Baza danych jest koniecznym elementem tworzonego systemu. Worker zapisuje zebran
 
 #### Podpowiedzi
 
-Sposób tworzenia usługi Azure Database for Postgres oraz podłączenia do serwera Postgres przedstawiony w ćwiczeniu poświęconym **integracji z bazą danych** :point_right: [link do ćwiczenia](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/12_connect_to_azure_database).
+Sposób tworzenia usługi Azure Database for Postgres oraz podłączenia do serwera Postgres przedstawiony w ćwiczeniu poświęconym **integracji z bazą danych** :point_right: [link do ćwiczenia](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/16_connect_to_azure_database).
 
 <details>
   <summary><b>Odpowiedzi</b></summary>
 
-  W tym zadaniu wszystkie odpowiedzi zawarte są w treści lub w [treści ćwiczenia wykonywanego podczas spotkania](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/12_connect_to_azure_database) :smile:
+  W tym zadaniu wszystkie odpowiedzi zawarte są w treści lub w [treści ćwiczenia wykonywanego podczas spotkania](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/16_connect_to_azure_database) :smile:
 
 </details>
 
@@ -271,17 +271,17 @@ Usługa Key Vault pozowli na bezpieczne przechowywanie sekretów do bazy danych,
     - `keyvaultName` - nazwa utworzonego Key Vault
     - `tenantId`
 
-    Informację jak zdobyć te wartości znajdziesz w ćwiczeniu [Key Valut (ćwiczenie)](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/16_azure_key_vault).
+    Informację jak zdobyć te wartości znajdziesz w ćwiczeniu [Key Valut (ćwiczenie)](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/18_azure_key_vault_with_azure_database).
 
 1. Stwórz Pod do debugging i sprawdź czy sekrety są pobierane z Key Vault
 
 #### Podpowiedzi
 
-Sposób tworzenia i wykorzystania Key Vault przedstawiono w ćwiczeniu poświęconym [Key Valut (ćwiczenie)](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/16_azure_key_vault).
+Sposób tworzenia i wykorzystania Key Vault przedstawiono w ćwiczeniu poświęconym [Key Valut (ćwiczenie)](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/18_azure_key_vault_with_azure_database).
 
 W razie problemów z pobieraniem sekretów z Azure Key Vault do Pod możesz spróbować zdiagnozować problem za pomocą `kubectl describe pod`. Informacje zawarte w sekcji _"Events"_ z pewnością nakierują Cię gdzie szukać problemu.
 
-**Uwaga**: Przedstawiony w ćwiczeniu YAML dla `SecretProviderClass` pozwalał na wstrzykiwanie sekretów do Podów jako Volumes. W tym ćwiczeniu użyjesz mechanizmu wstrzykiwania sekretów przez zmienne środowiskowe. Aby zmienić mechanizm użyj specjalnie przygotowanego YAML z `SecretProviderClass`, który znajdziesz w pliku [./files/keyvault.yaml](./files/keyvault.yaml).
+**Uwaga**: Przedstawiony w ćwiczeniu YAML dla `SecretProviderClass` pozwalał na wstrzykiwanie sekretów do Podów jako Volumes. W tym ćwiczeniu użyjesz mechanizmu wstrzykiwania sekretów przez zmienne środowiskowe. Aby zmienić mechanizm użyj specjalnie przygotowanego YAML z `SecretProviderClass`, który znajdziesz w pliku [./files/keyvault.yaml](./files/5-keyvault.yaml).
 
 **Uwaga**: Instalując Key Vault za pomocą Helm upewnij się, że przeciążysz jedną z domyślnych wartości Helm Chart. Ustaw wartość `secrets-store-csi-driver.syncSecret.enabled` na `true` lub wykorzystaj poniższą komendę do instalacji Azure csi-secrets-store-provider-azure:
 
@@ -338,7 +338,7 @@ helm install csi csi-secrets-store-provider-azure/csi-secrets-store-provider-azu
 
 W tym momencie Worker jest usługą odpowiedzialną za pobranie informacji o kursach walut z API NBP. W związku z tym pierwotny kod usługi API został zmieniony, żeby odczytywać dane o kursach walut z bazy danych.
 
-Zaktualizuj Deployment usługi API i sprawdź czy nadal poprawnie wyświetla dane. Do aktualizacji użyj pliku YAML [./files/6-deployment-api.yaml](./files/deployment-api.yaml).
+Zaktualizuj Deployment usługi API i sprawdź czy nadal poprawnie wyświetla dane. Do aktualizacji użyj pliku YAML [./files/6-deployment-api.yaml](./files/6-deployment-api.yaml).
 
 **Uwaga**: Usługa API w nowej wersji łączy się z bazą danych. Do połączenia z bazą danych wymaga podania wartości uwierzytelniających przez zmienne środowiskowe. Przygotowany [plik YAML (`./files/6-deployment-api.yaml`)](./files/6-deployment-api.yaml) został przygotowany, aby odczytać wartości z Secret o nazwie `db-secrets` i wstawiać jego wartości do zmiennych środowiskowych w uruchamianych kontenerach. Secret `db-secrets` jest tworzony przez _initContainer_ `sync-secrets` na podstawie konfiguracji `SecretProviderClass`, którą znajdziesz w pliku [./files/5-keyvault.yaml](./files/5-keyvault.yaml).
 
@@ -346,7 +346,7 @@ Zaktualizuj Deployment usługi API i sprawdź czy nadal poprawnie wyświetla dan
 
 #### Kroki
 
-1. Zaktualizuj Deployment usługi API za pomocą pliku [./files/6-deployment-api.yaml](./files/deployment-api.yaml)
+1. Zaktualizuj Deployment usługi API za pomocą pliku [./files/6-deployment-api.yaml](./files/6-deployment-api.yaml)
 1. Sprawdź czy API nadal poprawnie zwraca dane
 1. Usuń ConfigMap z nazwą `cm-azure-database-connection-details`. ConfigMap znajduje się w Namespace `backend`
 1. Zaktualizuj CronJob za pomocą pliku [./files/6-worker-cronjob-secrets.yaml](./files/6-worker-cronjob-secrets.yaml)
@@ -439,7 +439,7 @@ Zadaniem endpoint `/ready` jest sprawdzenie czy wszystkie zależności aplikacji
 
 Wykorzystaj mechanizm Probe w celu automatycznego sprawdzenia czy aplikacje działają poprawnie. Obraz aplikacji [macborowy/chmurobank-api:latest](https://hub.docker.com/r/macborowy/chmurobank-api) zawiera już kod aplikacji z zaimplementowanymi endpoint.
 
-Sposób tworzenia i wykorzystania Liveness Probe został przedstawiony w ćwiczeniu poświęconym **Liveness Probe** - [Link do ćwiczenia](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/11_probes). Natomiast informację dotyczące tworzenia Readiness Probe  znadują się w dokumentacji Kubernetes - [Link do dokumentacji dotyczącej Readiness Probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-readiness-probes)
+Sposób tworzenia i wykorzystania Liveness Probe został przedstawiony w ćwiczeniu poświęconym **Liveness Probe** - [Link do ćwiczenia](https://github.com/cloudstateu/ic-2-2022/tree/main/Kubernetes/12_probes). Natomiast informację dotyczące tworzenia Readiness Probe  znadują się w dokumentacji Kubernetes - [Link do dokumentacji dotyczącej Readiness Probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-readiness-probes)
 
 W celu przetestowania działania Readiness Probe możesz wyłączyć bazę danych w Azure. W ten sposób proste zapytania do bazy danych, które jest wykonywane przez endpoint `/ready` nie powiedzie się i Readiness Probe powinien zwrócić porażkę i w ostatczności odłączyć repliki od Service i w ten sposób nie kierować ruchu do procesów, które nie są w stanie go obsłużyć.
 
